@@ -2,7 +2,6 @@ import sqlite3
 import socket
 import threading
 
-# Database initialization
 def init_db():
     conn = sqlite3.connect('database.db')
     cursor = conn.cursor()

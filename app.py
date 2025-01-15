@@ -91,6 +91,34 @@ def signin():
 
     return render_template('signin.html')
 
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        selected_protocol = request.form['protocol']
+
+        message = f"SIGNUP|{username}|{password}"
+
+        if selected_protocol == 'TCP':
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.connect(("localhost", 5001))
+                sock.send(message.encode())
+                response = sock.recv(1024).decode()
+
+        elif selected_protocol == 'UDP':
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+                sock.sendto(message.encode(), ("localhost", 5002))
+                response, _ = sock.recvfrom(1024)
+                response = response.decode()
+
+        if response == "OK":
+            session['username'] = username
+            return redirect(url_for('home'))
+        else:
+            return f"Sign-in failed: {response}"
+
+    return render_template('signin.html')
 @app.route('/logout')
 def logout():
     session.pop('username', None)
