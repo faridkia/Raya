@@ -20,22 +20,15 @@ def quiz():
 
     if request.method == 'POST':
         selected_protocol = request.form['protocol']
-        answer1 = '|'.join(request.form.getlist('1'))
-        answer2 = '|'.join(request.form.getlist('2'))
-        answer3 = '|'.join(request.form.getlist('3'))
-        answer4 = '|'.join(request.form.getlist('4'))
-        answer5 = '|'.join(request.form.getlist('5'))
-        answer6 = '|'.join(request.form.getlist('6'))
-        answer7 = '|'.join(request.form.getlist('7'))
-        answer8 = '|'.join(request.form.getlist('8'))
-        answer9 = '|'.join(request.form.getlist('9'))
-        answer10 = '|'.join(request.form.getlist('10'))
+        quiz_time = request.form['quiz_time']
+        answers = {str(i): '|'.join(request.form.getlist(str(i))) for i in range(1, 11)}
 
-        message = f"QUIZ|{session['username']}|{answer1}|{answer2}|{answer3}|{answer4}|{answer5}|{answer6}|{answer7}|{answer8}|{answer9}|{answer10}"
+        message = f"QUIZ|{session['username']}|" + "|".join(answers.values()) + f"|{quiz_time}"
         print('--------------Client-----------')
         print(message)
         print('--------------Client-----------')
 
+        # Send message to server
         if selected_protocol == 'TCP':
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.connect(("localhost", 5001))
@@ -48,13 +41,33 @@ def quiz():
                 response, _ = sock.recvfrom(1024)
                 response = response.decode()
 
+        # Process the response
         data = response.split('|')
-        print(data)
-        score, participation_count, highest_score = data[1], data[3], data[5]
+        score = data[1]
+        participation_count = data[3]
+        highest_score = data[5]
 
-        return f"Quiz Complete! Your score: {score}/10. Participation Count: {participation_count}. Highest Score: {highest_score}. <a href='/'>Go Home</a>"
+        # Fetch sorted leaderboard
+        conn = sqlite3.connect('database.db')
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT username, highest_score, timer
+            FROM users
+            ORDER BY highest_score DESC, timer ASC
+        """)
+        leaderboard = cursor.fetchall()
+        conn.close()
 
-    # Generate random quiz (this will request questions from the server)
+        # Render the results page
+        return render_template(
+            'quiz_results.html',
+            score=score,
+            participation_count=participation_count,
+            highest_score=highest_score,
+            leaderboard=leaderboard,
+        )
+
+    # Generate random quiz questions
     conn = sqlite3.connect('database.db')
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM questions ORDER BY RANDOM() LIMIT 10")
@@ -62,13 +75,14 @@ def quiz():
     conn.close()
     return render_template('quiz.html', questions=questions)
 
+
 @app.route('/signin', methods=['GET', 'POST'])
 def signin():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
         selected_protocol = request.form['protocol']
-
+        
         message = f"SIGNIN|{username}|{password}"
 
         if selected_protocol == 'TCP':

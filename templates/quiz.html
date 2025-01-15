@@ -4,26 +4,88 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quiz</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f3f3f3;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #1474e1;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        .timer {
+            font-size: 1.2em;
+            color: #ff5722;
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #1474e1;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #005bb5;
+        }
+        hr {
+            border: none;
+            border-bottom: 1px solid #ddd;
+        }
+    </style>
 </head>
 <body>
-    <h1>Quiz</h1>
-    <form method="POST">
-        <select name="protocol">
-            <option value="TCP">TCP</option>
-            <option value="UDP">UDP</option>
-        </select><br>
-        <!-- <input name="protocol" value="{{ protocol }}"> -->
-        {% for question in questions %}
-        <div>
-            <p><strong>Q{{ loop.index }}:</strong> {{ question[1] }}</p>
-            <input type="radio" name="{{ loop.index }}" value="a{{question[6]}}" required> {{ question[2] }}<br>
-            <input type="radio" name="{{ loop.index }}" value="b{{question[6]}}"> {{ question[3] }}<br>
-            <input type="radio" name="{{ loop.index }}" value="c{{question[6]}}"> {{ question[4] }}<br>
-            <input type="radio" name="{{ loop.index }}" value="d{{question[6]}}"> {{ question[5] }}<br>
-        </div>
-        <hr>
-        {% endfor %}
-        <button type="submit">Submit Quiz</button>
-    </form>
+    <div class="container">
+        <h1>Quiz</h1>
+        <p class="timer">Time Elapsed: <span id="timer">0</span> seconds</p>
+        <form method="POST" onsubmit="return submitQuiz();">
+            <select name="protocol">
+                <option value="TCP">TCP</option>
+                <option value="UDP">UDP</option>
+            </select><br>
+            {% for question in questions %}
+            <div>
+                <p><strong>Q{{ loop.index }}:</strong> {{ question[1] }}</p>
+                <input type="radio" name="{{ loop.index }}" value="a{{question[6]}}" required> {{ question[2] }}<br>
+                <input type="radio" name="{{ loop.index }}" value="b{{question[6]}}"> {{ question[3] }}<br>
+                <input type="radio" name="{{ loop.index }}" value="c{{question[6]}}"> {{ question[4] }}<br>
+                <input type="radio" name="{{ loop.index }}" value="d{{question[6]}}"> {{ question[5] }}<br>
+            </div>
+            <hr>
+            {% endfor %}
+            <input type="hidden" id="quiz-time" name="quiz_time">
+            <button type="submit">Submit Quiz</button>
+        </form>
+    </div>
+
+    <script>
+        let timer = 0;
+        const timerElement = document.getElementById('timer');
+        const quizTimeInput = document.getElementById('quiz-time');
+
+        // Start the timer
+        const interval = setInterval(() => {
+            timer++;
+            timerElement.textContent = timer;
+        }, 1000);
+
+        // Capture the time on quiz submission
+        function submitQuiz() {
+            clearInterval(interval);
+            quizTimeInput.value = timer; // Set the hidden input value
+            return true;
+        }
+    </script>
 </body>
 </html>

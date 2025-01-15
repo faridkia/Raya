@@ -78,32 +78,34 @@ def message_process(message):
 
     elif command == "QUIZ":
         username = parts[1]
-        answers = parts[2:]
-
+        quiz_time = int(parts[-1])  # Extract time taken from message
+        answers = parts[2:-1]  # Exclude time from answers
 
         question_answers = []
         for i in answers:
             question_answers.append(i[1])
 
+        # Calculate the score
         score = 0
         for i in range(len(answers)):
             if answers[i][0] == question_answers[i]:
-                print("----Server----")
-                print(answers[i][0], question_answers[i])
-
                 score += 1
-        
-        # Update user's participation_count and highest_score
+
+        # Fetch and update user details
         cursor.execute("SELECT participation_count, highest_score FROM users WHERE username = ?", (username,))
         user = cursor.fetchone()
         participation_count, highest_score = user[0] + 1, max(user[1], score)
 
-        cursor.execute("UPDATE users SET participation_count = ?, highest_score = ? WHERE username = ?", 
-                       (participation_count, highest_score, username))
+        # Update user's score, participation count, and timer
+        cursor.execute("""
+            UPDATE users 
+            SET participation_count = ?, highest_score = ?, timer = ? 
+            WHERE username = ?
+        """, (participation_count, highest_score, quiz_time, username))
         conn.commit()
         conn.close()
 
-        return f"SCORE|{score}|PARTICIPATION|{participation_count}|HIGHEST|{highest_score}"
+        return f"SCORE|{score}|PARTICIPATION|{participation_count}|HIGHEST|{highest_score}|TIME|{quiz_time}"
 
     return "INVALID_COMMAND"
 
