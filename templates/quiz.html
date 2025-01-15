@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz</title>
+</head>
+<body>
+    <h1>Quiz</h1>
+    <form method="POST">
+        <select name="protocol">
+            <option value="TCP">TCP</option>
+            <option value="UDP">UDP</option>
+        </select><br>
+        <!-- <input name="protocol" value="{{ protocol }}"> -->
+        {% for question in questions %}
+        <div>
+            <p><strong>Q{{ loop.index }}:</strong> {{ question[1] }}</p>
+            <input type="radio" name="{{ loop.index }}" value="a{{question[6]}}" required> {{ question[2] }}<br>
+            <input type="radio" name="{{ loop.index }}" value="b{{question[6]}}"> {{ question[3] }}<br>
+            <input type="radio" name="{{ loop.index }}" value="c{{question[6]}}"> {{ question[4] }}<br>
+            <input type="radio" name="{{ loop.index }}" value="d{{question[6]}}"> {{ question[5] }}<br>
+        </div>
+        <hr>
+        {% endfor %}
+        <button type="submit">Submit Quiz</button>
+    </form>
+</body>
+</html>
