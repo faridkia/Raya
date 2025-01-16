@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Room</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f4f4f9;
+        }
+
+        h1 {
+            color: #333;
+            margin-top: 20px;
+        }
+
+        .chat-container {
+            max-width: 600px;
+            width: 100%;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            background: white;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .messages {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #e9ecef;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+
+        .message {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .message-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .message-actions button {
+            background: none;
+            border: none;
+            color: #007bff;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .message-actions button:hover {
+            text-decoration: underline;
+        }
+
+        .send-message {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .send-message textarea {
+            resize: none;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 100%;
+            font-size: 14px;
+        }
+
+        .send-message button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .send-message button:hover {
+            background-color: #0056b3;
+        }
+
+        .flash-messages {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #ffdd57;
+            color: #856404;
+            padding: 10px 20px;
+            border: 1px solid #ffd326;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            animation: fadeOut 3s forwards;
+        }
+
+        @keyframes fadeOut {
+            0% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { opacity: 0; display: none; }
+        }
+    </style>
+</head>
+<body>
+    <h1>Chat Room 💬</h1>
+    <div class="chat-container">
+        <div class="messages">
+            {% for message in messages %}
+            <div class="message">
+                <div class="message-header">
+                    <strong>{{ message.username }}</strong> 
+                    <small>{{ message.timestamp }}</small>
+                </div>
+                <p>{{ message.message }}</p>
+                <div class="message-actions">
+                    <form method="POST">
+                        <input type="hidden" name="protocol" value="{{ protocol }}">
+                        <button type="submit" name="like" value="{{ message.id }}">👍 {{ message.likes }}</button>
+                        <button type="submit" name="dislike" value="{{ message.id }}">👎 {{ message.dislikes }}</button>
+                    
+                        {% if message.username == username %}
+                        <!-- Regular user: delete own messages -->
+                        <input type="hidden" name="delete_type" value="self">
+                        <button type="submit" name="delete" value="{{ message.id }}">🗑️ Delete (Self)</button>
+                        <input type="hidden" name="delete_type" value="all">
+                        <button type="submit" name="delete" value="{{ message.id }}">🗑️ Delete (All)</button>
+                        {% elif session.get('is_admin', 0) %}
+                        <!-- Admin: delete any message -->
+                        <input type="hidden" name="delete_type" value="self">
+                        <button type="submit" name="delete" value="{{ message.id }}">🗑️ Hide for Admin</button>
+                        <input type="hidden" name="delete_type" value="all">
+                        <button type="submit" name="delete" value="{{ message.id }}">🗑️ Delete (All)</button>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <form method="POST" class="send-message">
+            <input type="hidden" name="protocol" value="{{ protocol }}">
+            <textarea name="message" rows="2" placeholder="Type your message here..." required></textarea>
+            <button type="submit">Send</button>
+        </form>
+    </div>
+
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <div class="flash-messages">
+        {% for message in messages %}
+        <p>{{ message }}</p>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+</body>
+</html>
