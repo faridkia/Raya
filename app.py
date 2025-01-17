@@ -11,7 +11,7 @@ from itertools import cycle
 @app.route('/')
 def home():
     if 'username' in session:
-        return f"Welcome, {session['username']}! <a href='/logout'>Logout</a> <a href='/quiz'>Take Quiz</a>"
+        return render_template('index.html', username=session['username'])
     return render_template('index.html')
 
 @app.route('/private_chat', methods=['GET', 'POST'])
@@ -96,7 +96,6 @@ def private_chat():
         chat_users=chat_users,
         protocol=protocol
     )
-
 
 @app.route('/quiz', methods=['GET', 'POST'])
 def quiz():

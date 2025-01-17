@@ -129,7 +129,7 @@
             {% for message in messages %}
             <div class="message">
                 <div class="message-header">
-                    <a href="http://127.0.0.1:5000/private_chat/{{message.username}}"><strong>{{ message.username }}</strong></a>
+                    <a href="http://127.0.0.1:5000/private_chat?user={{message.username}}"><strong>{{ message.username }}</strong></a>
                     <small>{{ message.timestamp }}</small>
                 </div>
                 <p>{{ message.message }}</p>

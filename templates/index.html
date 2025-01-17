@@ -1,9 +1,173 @@
-<form method="POST" action="/send_message">
-    <textarea name="message" placeholder="Enter your message"></textarea><br>
-    <label for="protocol">Select Protocol:</label>
-    <select name="protocol">
-        <option value="TCP">TCP</option>
-        <option value="UDP">UDP</option>
-    </select><br>
-    <button type="submit">Send</button>
-</form>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home</title>
+    <style>
+        /* Reset and basic styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            overflow: hidden;
+            background: #2c2f33;
+            color: white;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Full-page Navbar (dominant section) */
+        .navbar {
+            height: 100vh;
+            width: 100%;
+            display: grid;
+            place-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Grid layout for items */
+        .navbar-content {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+            width: 80%;
+            max-width: 1200px;
+            text-align: center;
+        }
+
+        .navbar-left, .navbar-right {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        /* Links inside the navbar */
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            font-size: 1.8rem;
+            font-weight: bold;
+            padding: 15px 20px;
+            border-radius: 50px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.1);
+            text-transform: uppercase;
+        }
+
+        .navbar a:hover {
+            background: linear-gradient(90deg, red, orange, yellow, green, cyan, blue, violet);
+            color: transparent;
+            -webkit-background-clip: text;
+            animation: slide 1s linear infinite;
+        }
+
+        .navbar a::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 200%;
+            height: 100%;
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
+            transition: transform 0.4s ease;
+            transform: skewX(-45deg);
+        }
+
+        .navbar a:hover::before {
+            transform: translateX(100%);
+        }
+
+        /* Animation for hover effect */
+        @keyframes slide {
+            0% { background-position: 0%; }
+            100% { background-position: 200%; }
+        }
+
+        /* Complex animated background */
+        .navbar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 300%;
+            height: 300%;
+            background: radial-gradient(circle, #3a3d42, #2c2f33, #23272a);
+            animation: gradientMove 10s infinite linear;
+            z-index: -1;
+        }
+
+        @keyframes gradientMove {
+            0% {
+                transform: translate(-10%, -10%) rotate(0deg);
+            }
+            50% {
+                transform: translate(10%, 10%) rotate(180deg);
+            }
+            100% {
+                transform: translate(-10%, -10%) rotate(360deg);
+            }
+        }
+
+        /* Mouse hover trail */
+        .cursor {
+            position: absolute;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            pointer-events: none;
+            mix-blend-mode: difference;
+            animation: fadeOut 1s forwards;
+        }
+
+        @keyframes fadeOut {
+            0% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(2); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Full-height Navbar -->
+    <div class="navbar">
+        <div class="navbar-content">
+            <div class="navbar-left">
+                <a href="/">Home</a>
+                <a href="/quiz">Quiz</a>
+                <a href="/leaderboard">Leaderboard</a>
+            </div>
+            <div class="navbar-right">
+                <a href="/chat">Chat</a>
+                <a href="/private_chat">Private Chats</a>
+                {% if username %}
+                    <a href="/logout">Logout</a>
+                {% else %}
+                    <a href="/signin">Sign In/Sign Up</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Mouse cursor effect -->
+    <script>
+        document.addEventListener('mousemove', (e) => {
+            const cursor = document.createElement('div');
+            cursor.classList.add('cursor');
+            cursor.style.left = `${e.pageX}px`;
+            cursor.style.top = `${e.pageY}px`;
+
+            document.body.appendChild(cursor);
+
+            setTimeout(() => cursor.remove(), 800); // Remove the element after animation
+        });
+    </script>
+</body>
+</html>
