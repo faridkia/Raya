@@ -14,46 +14,63 @@ def add_user(username, password):
     except sqlite3.IntegrityError:
         return False
 
-import socket
-import threading
-from itertools import cycle
+# Function to handle TCP requests for a specific port
+def handle_tcp(port):
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.bind(('127.0.0.1', port))
+    server.listen(5)
+    print(f"TCP server listening on port {port}...")
+    while True:
+        conn, addr = server.accept()
+        message = conn.recv(1024).decode()
+        response = message_process(message)
+        conn.sendall(response.encode())
 
-# Backend servers configuration
-tcp_backends = [('127.0.0.1', 5001), ('127.0.0.1', 5003), ('127.0.0.1', 5005)]
-udp_backends = [('127.0.0.1', 5002), ('127.0.0.1', 5004), ('127.0.0.1', 5006)]
+# Function to handle UDP requests for a specific port
+def handle_udp(port):
+    server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    server.bind(('127.0.0.1', port))
+    print(f"UDP server listening on port {port}...")
+    while True:
+        message, addr = server.recvfrom(1024)
+        response = message_process(message.decode())
+        server.sendto(response.encode(), addr)
+
+tcp_backends = [('127.0.0.1', 5003), ('127.0.0.1', 5005), ('127.0.0.1', 5007)]
+udp_backends = [('127.0.0.1', 5004), ('127.0.0.1', 5006), ('127.0.0.1', 5008)]
 
 # Load balancer cycling through backends
 tcp_backend_cycle = cycle(tcp_backends)
 udp_backend_cycle = cycle(udp_backends)
 
-def handle_tcp_client(client_socket):
-    backend = next(tcp_backend_cycle)
-    backend_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    backend_socket.connect(backend)
-    
-    # Relay data between client and backend
-    def forward(source, target):
-        while True:
-            data = source.recv(1024)
-            if not data:
-                break
-            target.sendall(data)
-    
-    threading.Thread(target=forward, args=(client_socket, backend_socket)).start()
-    threading.Thread(target=forward, args=(backend_socket, client_socket)).start()
 
+# TCP Load Balancer
 def tcp_load_balancer():
     lb_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    lb_socket.bind(('127.0.0.1', 5001))  # Keep Flask configuration unchanged
+    lb_socket.bind(('127.0.0.1', 5001))  # Load balancer listens on 5001 for TCP
     lb_socket.listen(5)
     print("TCP Load Balancer listening on port 5001...")
     while True:
         client_socket, addr = lb_socket.accept()
-        threading.Thread(target=handle_tcp_client, args=(client_socket,)).start()
+        backend = next(tcp_backend_cycle)
+        backend_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        backend_socket.connect(backend)
 
+        # Relay data between client and backend
+        def forward(source, target):
+            while True:
+                data = source.recv(1024)
+                if not data:
+                    break
+                target.sendall(data)
+
+        threading.Thread(target=forward, args=(client_socket, backend_socket)).start()
+        threading.Thread(target=forward, args=(backend_socket, client_socket)).start()
+
+# UDP Load Balancer
 def udp_load_balancer():
     lb_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    lb_socket.bind(('127.0.0.1', 5002))  # Keep Flask configuration unchanged
+    lb_socket.bind(('127.0.0.1', 5002))  # Load balancer listens on 5002 for UDP
     print("UDP Load Balancer listening on port 5002...")
     while True:
         data, client_addr = lb_socket.recvfrom(1024)
@@ -62,7 +79,6 @@ def udp_load_balancer():
         backend_socket.sendto(data, backend)
         response, _ = backend_socket.recvfrom(1024)
         lb_socket.sendto(response, client_addr)
-
 
 def message_process(message):
     parts = message.split('|')
@@ -253,8 +269,21 @@ def message_process(message):
     return "INVALID_COMMAND"
 
 if __name__ == "__main__":
-    tcp_thread = threading.Thread(target=tcp_load_balancer)
-    udp_thread = threading.Thread(target=udp_load_balancer)
-    tcp_thread.start()
-    udp_thread.start()
+    # Start backend servers for TCP
+    for port in [5003, 5005, 5007]:
+        threading.Thread(target=handle_tcp, args=(port,), daemon=True).start()
+
+    # Start backend servers for UDP
+    for port in [5004, 5006, 5008]:
+        threading.Thread(target=handle_udp, args=(port,), daemon=True).start()
+
+    # Start load balancers
+    tcp_lb_thread = threading.Thread(target=tcp_load_balancer, daemon=True)
+    udp_lb_thread = threading.Thread(target=udp_load_balancer, daemon=True)
+    tcp_lb_thread.start()
+    udp_lb_thread.start()
+
+    # Keep the main thread alive
+    while True:
+        pass
 
