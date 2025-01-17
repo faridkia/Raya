@@ -14,6 +14,90 @@ def home():
         return f"Welcome, {session['username']}! <a href='/logout'>Logout</a> <a href='/quiz'>Take Quiz</a>"
     return render_template('index.html')
 
+@app.route('/private_chat', methods=['GET', 'POST'])
+def private_chat():
+    if 'username' not in session:
+        return redirect(url_for('signin'))
+
+    current_user = session['username']
+    protocol = request.form.get('protocol', 'TCP')  # Default to TCP if not specified
+    receiver = request.args.get('user')  # Get the receiver's username from the query parameter
+
+    if not receiver:
+        flash("No user selected for private chat")
+
+    if request.method == 'POST' and receiver:
+        # Handle sending a private message
+        message = request.form['message']
+        command = f"SEND_PRIVATE_MESSAGE|{current_user}|{receiver}|{message}"
+
+        if protocol == 'TCP':
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.connect(("localhost", 5001))
+                sock.send(command.encode())
+                response = sock.recv(1024).decode()
+        elif protocol == 'UDP':
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+                sock.sendto(command.encode(), ("localhost", 5002))
+                response, _ = sock.recvfrom(1024)
+
+        if response != "OK":
+            flash("Message failed to send")
+        else:
+            flash("Message sent successfully")
+
+    # Fetch private chat messages if a receiver is selected
+    if receiver:
+        command = f"FETCH_PRIVATE_CHAT|{current_user}|{receiver}"
+        if protocol == 'TCP':
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.connect(("localhost", 5001))
+                sock.send(command.encode())
+                response = sock.recv(1024).decode()
+        elif protocol == 'UDP':
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+                sock.sendto(command.encode(), ("localhost", 5002))
+                response, _ = sock.recvfrom(1024)
+
+        # Parse messages from the server response
+        messages = []
+        for msg in response.split('|'):
+            parts = msg.split('^')
+            if len(parts) == 5:  # Expecting id, sender, receiver, message, timestamp
+                messages.append({
+                    'id': parts[0],
+                    'sender': parts[1],
+                    'receiver': parts[2],
+                    'message': parts[3],
+                    'timestamp': parts[4],
+                })
+    else:
+        messages = []  # No messages if no receiver is selected
+
+    # Fetch chat list (users who have chatted with the current user)
+    command = f"FETCH_CHAT_LIST|{current_user}"
+    if protocol == 'TCP':
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.connect(("localhost", 5001))
+            sock.send(command.encode())
+            response = sock.recv(1024).decode()
+    elif protocol == 'UDP':
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+            sock.sendto(command.encode(), ("localhost", 5002))
+            response, _ = sock.recvfrom(1024)
+    
+    chat_users = response.split('|') if response else []
+
+    return render_template(
+        'private_chat.html',
+        username=current_user,
+        receiver=receiver,
+        messages=messages,
+        chat_users=chat_users,
+        protocol=protocol
+    )
+
+
 @app.route('/quiz', methods=['GET', 'POST'])
 def quiz():
     if 'username' not in session:

@@ -103,6 +103,47 @@ def message_process(message):
             return "OK"
         else:
             return "ERROR: Username already exists"
+    elif command == "SEND_PRIVATE_MESSAGE":
+        sender, receiver, text = parts[1], parts[2], parts[3]
+        cursor.execute(
+            "INSERT INTO private_messages (sender, receiver, message) VALUES (?, ?, ?)",
+            (sender, receiver, text)
+        )
+        conn.commit()
+        conn.close()
+        return "OK"
+
+    elif command == "FETCH_CHAT_LIST":
+        username = parts[1]
+        cursor.execute("""
+            SELECT DISTINCT CASE 
+                WHEN sender = ? THEN receiver
+                WHEN receiver = ? THEN sender
+            END AS chat_partner
+            FROM private_messages
+            WHERE sender = ? OR receiver = ?
+        """, (username, username, username, username))
+        chat_partners = cursor.fetchall()
+        conn.close()
+        if chat_partners:
+            return "|".join([partner[0] for partner in chat_partners])
+        return ""
+
+    elif command == "FETCH_PRIVATE_CHAT":
+        user1, user2 = parts[1], parts[2]
+        cursor.execute("""
+            SELECT id, sender, receiver, message, timestamp
+            FROM private_messages
+            WHERE (sender = ? AND receiver = ?) OR (sender = ? AND receiver = ?)
+            ORDER BY timestamp ASC
+        """, (user1, user2, user2, user1))
+        messages = cursor.fetchall()
+        conn.close()
+
+        if messages:
+            # Construct response with the correct number of fields
+            return "|".join([f"{m[0]}^{m[1]}^{m[2]}^{m[3]}^{m[4]}" for m in messages])
+        return ""
     
     elif command == "SEND_MESSAGE":
         username, msg_text = parts[1], parts[2]
@@ -129,7 +170,7 @@ def message_process(message):
         )
         return response
 
-    if command == "LIKE_MESSAGE":
+    elif command == "LIKE_MESSAGE":
         msg_id, username = int(parts[1]), parts[2]
         # Check if user has already reacted
         cursor.execute("SELECT reaction FROM reactions WHERE user = ? AND message_id = ?", (username, msg_id))
