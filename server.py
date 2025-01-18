@@ -268,16 +268,26 @@ def message_process(message):
                 score += 1
 
         #Fetch 
-        cursor.execute("SELECT participation_count, highest_score FROM users WHERE username = ?", (username,))
+        cursor.execute("SELECT participation_count, highest_score, timer FROM users WHERE username = ?", (username,))
         user = cursor.fetchone()
-        participation_count, highest_score = user[0] + 1, max(user[1], score)
+        hhigh = highest_score
+        participation_count, highest_score, timer = user[0] + 1, max(user[1], score), user[2]
         #Update in db
-        cursor.execute("""
-            UPDATE users 
-            SET participation_count = ?, highest_score = ?, timer = ? 
-            WHERE username = ?
-        """, (participation_count, highest_score, quiz_time, username))
-        conn.commit()
+        if highest_score == hhigh:
+            if timer > quiz_time:
+                cursor.execute("""
+                    UPDATE users 
+                    SET participation_count = ?, highest_score = ?, timer = ? 
+                    WHERE username = ?
+                """, (participation_count, highest_score, quiz_time, username))
+                conn.commit()
+        elif highest_score > hhigh:
+            cursor.execute("""
+                    UPDATE users 
+                    SET participation_count = ?, highest_score = ?, timer = ? 
+                    WHERE username = ?
+                """, (participation_count, highest_score, quiz_time, username))
+            conn.commit()
         conn.close()
         #Sending to app
         return f"SCORE|{score}|PARTICIPATION|{participation_count}|HIGHEST|{highest_score}|TIME|{quiz_time}"

@@ -20,14 +20,13 @@ def private_chat():
         return redirect(url_for('signin'))
 
     current_user = session['username']
-    protocol = request.form.get('protocol', 'TCP')  # Default to TCP if not specified
+    protocol = session['selected_protocol']
     receiver = request.args.get('user')  # Get the receiver's username from the query parameter
 
     if not receiver:
         flash("No user selected for private chat")
 
     if request.method == 'POST' and receiver:
-        # Handle sending a private message
         message = request.form['message']
         command = f"SEND_PRIVATE_MESSAGE|{current_user}|{receiver}|{message}"
 
@@ -59,11 +58,10 @@ def private_chat():
                 sock.sendto(command.encode(), ("localhost", 5002))
                 response, _ = sock.recvfrom(1024)
 
-        # Parse messages from the server response
         messages = []
         for msg in response.split('|'):
             parts = msg.split('^')
-            if len(parts) == 5:  # Expecting id, sender, receiver, message, timestamp
+            if len(parts) == 5:
                 messages.append({
                     'id': parts[0],
                     'sender': parts[1],
@@ -101,9 +99,9 @@ def private_chat():
 def quiz():
     if 'username' not in session:
         return redirect(url_for('signin'))
+    selected_protocol = session['selected_protocol']
 
     if request.method == 'POST':
-        selected_protocol = request.form['protocol']
         quiz_time = request.form['quiz_time']
         answers = {str(i): '|'.join(request.form.getlist(str(i))) for i in range(1, 11)}
 
@@ -162,7 +160,7 @@ def chat():
         return redirect(url_for('signin'))
 
     username = session['username']
-    selected_protocol = request.form.get('protocol', 'TCP')
+    selected_protocol = request.form['selected_protocol']
 
     if request.method == 'POST':
         if 'message' in request.form:
@@ -204,21 +202,17 @@ def chat():
             sock.connect(("localhost", 5001))
             sock.send(message.encode())
             response = sock.recv(1024).decode()
-            print(response)
     elif selected_protocol == 'UDP':
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
             sock.sendto(message.encode(), ("localhost", 5002))
             response, _ = sock.recvfrom(1024)
             response = response.decode()
-            print(response)
-    print('------fetch--------')
-    print(response)
     messages = []
     for msg in response.split('|'):
         parts = msg.split('^')
         if len(parts) == 7:
             is_hidden = parts[6] == 'True'
-            if not is_hidden:  # Only include messages that are not hidden
+            if not is_hidden:  # messages that are not hidden
                 messages.append({
                     'id': parts[0],
                     'username': parts[1],
@@ -262,6 +256,7 @@ def signin():
 
         if response == "OK":
             session['username'] = username
+            session['selected_protocol'] = selected_protocol
             return redirect(url_for('home'))
         else:
             return f"Sign-in failed: {response}"
@@ -270,7 +265,10 @@ def signin():
 
 @app.route('/leaderboard', methods=['GET'])
 def leaderboard():
-    selected_protocol = 'TCP'
+    if session['selected_protocol']:
+        selected_protocol = session['selected_protocol']
+    else:
+        selected_protocol = 'TCP'
     message = f"LEADERBOARD"
 
     if selected_protocol == 'TCP':
@@ -318,11 +316,13 @@ def signup():
 
         if response == "OK":
             session['username'] = username
+            session['selected_protocol'] = selected_protocol
             return redirect(url_for('home'))
         else:
             return f"Sign-up failed: {response}"
 
     return render_template('signup.html')
+
 @app.route('/logout')
 def logout():
     session.pop('username', None)
