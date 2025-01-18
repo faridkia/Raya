@@ -270,8 +270,9 @@ def message_process(message):
         #Fetch 
         cursor.execute("SELECT participation_count, highest_score, timer FROM users WHERE username = ?", (username,))
         user = cursor.fetchone()
-        hhigh = highest_score
         participation_count, highest_score, timer = user[0] + 1, max(user[1], score), user[2]
+        hhigh = highest_score
+
         #Update in db
         if highest_score == hhigh:
             if timer > quiz_time:

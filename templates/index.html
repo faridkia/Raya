@@ -120,8 +120,8 @@
         /* Mouse hover trail */
         .cursor {
             position: absolute;
-            width: 25px;
-            height: 25px;
+            width: 30px;
+            height: 30px;
             border-radius: 50%;
             background: rgba(255, 255, 255, 0.2);
             pointer-events: none;
@@ -133,10 +133,27 @@
             0% { opacity: 1; transform: scale(1); }
             100% { opacity: 0; transform: scale(2); }
         }
+        .header-h1{
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+        .header-h1:hover span{
+            background: linear-gradient(90deg, red, orange, yellow, green, cyan, blue, violet);
+            color: transparent;
+            -webkit-background-clip: text;
+            animation: slide 1s linear infinite;
+        }
     </style>
 </head>
 <body>
+    
     <div class="navbar">
+        <div class="header-h1">
+            {% if username %}
+            <h1 style="font-size: 55px;"><span>WELCOME {{username | upper }}</span> 😄🚀</h1>
+            {% endif %}
+        </div>
         <div class="navbar-content">
             <div class="navbar-left">
                 <a href="/">Home</a>

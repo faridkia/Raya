@@ -160,7 +160,7 @@ def chat():
         return redirect(url_for('signin'))
 
     username = session['username']
-    selected_protocol = request.form['selected_protocol']
+    selected_protocol = session['selected_protocol']
 
     if request.method == 'POST':
         if 'message' in request.form:
@@ -239,7 +239,7 @@ def signin():
         username = request.form['username']
         password = request.form['password']
         selected_protocol = request.form['protocol']
-        
+        session['selected_protocol'] = selected_protocol
         message = f"SIGNIN|{username}|{password}"
 
         if selected_protocol == 'TCP':
